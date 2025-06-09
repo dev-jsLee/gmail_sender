@@ -1,7 +1,60 @@
 [project]
-name = "send-gmail"
+name = "gmail-sender"
 version = "0.1.0"
-description = "Add your description here"
+description = "Gmail을 통해 이메일을 전송할 수 있는 GUI 프로그램. 이메일 작성, 첨부 파일 관리, HTML 형식 지원 등 다양한 기능을 제공합니다."
 readme = "README.md"
-requires-python = ">=3.11"
-dependencies = []
+requires-python = ">=3.12"
+license = {text = "MIT"}
+authors = [
+    {name = "dev-jsLee", email = "jslee7518@gmail.com"}
+]
+dependencies = [
+    "python-dotenv>=1.0.0",
+    "email-validator>=2.1.0.post1",
+]
+
+# 개발 시에만 필요한 추가 패키지들
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",    # 테스트 실행을 위한 프레임워크
+    "black>=23.0.0",    # 코드 포맷팅 도구
+    "isort>=5.0.0",     # import 문 정렬 도구
+    "mypy>=1.0.0",      # 정적 타입 검사 도구
+    "pyinstaller>=6.3.0",  # EXE 파일 생성 도구
+    "tomli>=2.0.0",     # TOML 파일 파싱 도구
+]
+
+# 패키지 빌드 시스템 설정
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# hatchling 빌드 설정
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src",
+    "tests",
+    "README.md",
+    "requirements.txt",
+    "pyproject.toml",
+]
+
+# Black 코드 포맷터 설정
+[tool.black]
+line-length = 88        # 한 줄의 최대 길이
+target-version = ["py312"]  # Python 3.12 문법 사용
+
+# isort import 정렬 도구 설정
+[tool.isort]
+profile = "black"       # black 포맷터와 호환되는 설정 사용
+multi_line_output = 3   # 여러 줄의 import 정렬 방식
+
+# mypy 타입 체크 도구 설정
+[tool.mypy]
+python_version = "3.12"  # Python 3.12 타입 시스템 사용
+warn_return_any = true   # Any 타입 반환 시 경고
+warn_unused_configs = true  # 사용되지 않은 설정 경고
+disallow_untyped_defs = true  # 타입 힌트가 없는 함수 정의 금지
