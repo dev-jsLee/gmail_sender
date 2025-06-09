@@ -14,7 +14,10 @@ class MainWindow(tk.Tk):
         super().__init__()
         
         self.title("Gmail 전송 프로그램")
-        self.geometry("600x500")
+        self.geometry("800x700")  # 가로 800, 세로 700으로 크기 증가
+        
+        # 최소 창 크기 설정
+        self.minsize(600, 500)  # 가로 최소 600, 세로 최소 500
         
         self._create_widgets()
         self._setup_menu()
@@ -36,6 +39,10 @@ class MainWindow(tk.Tk):
         # 진행 상태 레이블
         self.progress_label = ttk.Label(progress_frame, text="")
         self.progress_label.pack(side=tk.LEFT)
+        
+        # 진행률 표시 레이블
+        self.percentage_label = ttk.Label(progress_frame, text="")
+        self.percentage_label.pack(side=tk.LEFT, padx=(5, 0))
         
         # 진행바
         self.progress_bar = ttk.Progressbar(
@@ -81,6 +88,7 @@ class MainWindow(tk.Tk):
             # 진행바 초기화
             self.progress_bar['value'] = 0
             self.progress_label['text'] = "이메일 전송 중..."
+            self.percentage_label['text'] = "0%"
             self.update()
             
             # 각 수신자에게 이메일 전송
@@ -88,7 +96,7 @@ class MainWindow(tk.Tk):
             for i, recipient in enumerate(recipients, 1):
                 # 현재 수신자에게 이메일 전송
                 current_kwargs = kwargs.copy()
-                current_kwargs['to_emails'] = [recipient]  # 'to' 대신 'to_emails' 사용
+                current_kwargs['to_emails'] = [recipient]
                 result = sender.send_email(**current_kwargs)
                 
                 if result:
@@ -98,6 +106,7 @@ class MainWindow(tk.Tk):
                 progress = (i / total_recipients) * 100
                 self.progress_bar['value'] = progress
                 self.progress_label['text'] = f"전송 중... ({i}/{total_recipients})"
+                self.percentage_label['text'] = f"{progress:.1f}%"
                 self.update()
             
             # 전송 결과 표시
@@ -110,12 +119,14 @@ class MainWindow(tk.Tk):
             # 진행바 초기화
             self.progress_bar['value'] = 0
             self.progress_label['text'] = ""
+            self.percentage_label['text'] = ""
             
         except Exception as e:
             messagebox.showerror("오류", str(e))
             # 진행바 초기화
             self.progress_bar['value'] = 0
             self.progress_label['text'] = ""
+            self.percentage_label['text'] = ""
             
     def _show_settings(self):
         """설정 창 표시"""
