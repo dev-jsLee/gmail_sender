@@ -21,9 +21,29 @@ class MainWindow(tk.Tk):
         
     def _create_widgets(self):
         """위젯 생성"""
+        # 메인 프레임
+        main_frame = ttk.Frame(self)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
         # 이메일 폼
-        self.email_form = EmailForm(self, on_send=self._send_email)
-        self.email_form.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.email_form = EmailForm(main_frame, on_send=self._send_email)
+        self.email_form.pack(fill=tk.BOTH, expand=True)
+        
+        # 진행 상태 프레임
+        progress_frame = ttk.Frame(main_frame)
+        progress_frame.pack(fill=tk.X, pady=(10, 0))
+        
+        # 진행 상태 레이블
+        self.progress_label = ttk.Label(progress_frame, text="")
+        self.progress_label.pack(side=tk.LEFT)
+        
+        # 진행바
+        self.progress_bar = ttk.Progressbar(
+            progress_frame,
+            mode='determinate',
+            length=300
+        )
+        self.progress_bar.pack(side=tk.LEFT, padx=(5, 0))
         
     def _setup_menu(self):
         """메뉴 설정"""
@@ -50,16 +70,52 @@ class MainWindow(tk.Tk):
             config = EmailConfig()
             sender = EmailSender(config)
             
-            result = sender.send_email(**kwargs)
+            # 수신자 목록 가져오기
+            recipients = kwargs.get('to_emails', [])
+            total_recipients = len(recipients)
             
-            if result:
-                messagebox.showinfo("성공", "이메일이 성공적으로 전송되었습니다.")
+            if total_recipients == 0:
+                messagebox.showwarning("경고", "수신자 이메일 주소를 입력해주세요.")
+                return
+            
+            # 진행바 초기화
+            self.progress_bar['value'] = 0
+            self.progress_label['text'] = "이메일 전송 중..."
+            self.update()
+            
+            # 각 수신자에게 이메일 전송
+            success_count = 0
+            for i, recipient in enumerate(recipients, 1):
+                # 현재 수신자에게 이메일 전송
+                current_kwargs = kwargs.copy()
+                current_kwargs['to_emails'] = [recipient]  # 'to' 대신 'to_emails' 사용
+                result = sender.send_email(**current_kwargs)
+                
+                if result:
+                    success_count += 1
+                
+                # 진행 상태 업데이트
+                progress = (i / total_recipients) * 100
+                self.progress_bar['value'] = progress
+                self.progress_label['text'] = f"전송 중... ({i}/{total_recipients})"
+                self.update()
+            
+            # 전송 결과 표시
+            if success_count == total_recipients:
+                messagebox.showinfo("성공", f"모든 이메일이 성공적으로 전송되었습니다. ({success_count}/{total_recipients})")
                 self.email_form.clear()
             else:
-                messagebox.showerror("오류", "이메일 전송에 실패했습니다.")
-                
+                messagebox.showwarning("경고", f"일부 이메일 전송에 실패했습니다. ({success_count}/{total_recipients})")
+            
+            # 진행바 초기화
+            self.progress_bar['value'] = 0
+            self.progress_label['text'] = ""
+            
         except Exception as e:
             messagebox.showerror("오류", str(e))
+            # 진행바 초기화
+            self.progress_bar['value'] = 0
+            self.progress_label['text'] = ""
             
     def _show_settings(self):
         """설정 창 표시"""

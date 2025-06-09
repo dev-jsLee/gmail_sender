@@ -6,22 +6,89 @@ from tkinter import ttk
 from typing import List, Callable
 import re
 
-class EmailEntry(ttk.Entry):
+class EmailEntry(ttk.Frame):
     """이메일 주소 입력을 위한 커스텀 위젯"""
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         self._emails: List[str] = []
-        self.bind('<Return>', self._add_email)
-        self.bind('<FocusOut>', self._add_email)
+        self._create_widgets()
+        
+    def _create_widgets(self):
+        """위젯 생성"""
+        # 메인 프레임 (입력 필드와 리스트를 좌우로 배치)
+        main_frame = ttk.Frame(self)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 왼쪽: 이메일 입력 프레임
+        input_frame = ttk.Frame(main_frame)
+        input_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
+        
+        # 이메일 입력 필드
+        self.entry = ttk.Entry(input_frame)
+        self.entry.pack(fill=tk.X)
+        self.entry.bind('<Return>', self._add_email)
+        self.entry.bind('<FocusOut>', self._add_email)
+        
+        # 입력 안내 레이블
+        ttk.Label(
+            input_frame,
+            text="Enter 키를 누르거나\n다른 곳을 클릭하면\n이메일이 추가됩니다",
+            justify=tk.LEFT,
+            wraplength=150
+        ).pack(fill=tk.X, pady=(5, 0))
+        
+        # 오른쪽: 이메일 목록과 버튼을 포함하는 프레임
+        list_container = ttk.Frame(main_frame)
+        list_container.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        
+        # 이메일 목록 프레임
+        list_frame = ttk.Frame(list_container)
+        list_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 이메일 목록
+        self.listbox = tk.Listbox(list_frame, height=6)
+        self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # 스크롤바
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.listbox.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.listbox.configure(yscrollcommand=scrollbar.set)
+        
+        # 버튼 프레임 (리스트 아래에 배치)
+        button_frame = ttk.Frame(list_container)
+        button_frame.pack(fill=tk.X, pady=(5, 0))
+        
+        # 제거 버튼
+        ttk.Button(
+            button_frame,
+            text="선택 제거",
+            command=self._remove_email
+        ).pack(side=tk.LEFT)
+        
+        # 전체 제거 버튼
+        ttk.Button(
+            button_frame,
+            text="전체 제거",
+            command=self.clear
+        ).pack(side=tk.RIGHT)
         
     def _add_email(self, event=None):
         """이메일 주소 추가"""
-        email = self.get().strip()
+        email = self.entry.get().strip()
         if email and self._validate_email(email):
             if email not in self._emails:
                 self._emails.append(email)
-                self.delete(0, tk.END)
+                self.listbox.insert(tk.END, email)
+                self.entry.delete(0, tk.END)
                 
+    def _remove_email(self):
+        """선택된 이메일 주소 제거"""
+        selection = self.listbox.curselection()
+        if selection:
+            index = selection[0]
+            self._emails.pop(index)
+            self.listbox.delete(index)
+    
     def _validate_email(self, email: str) -> bool:
         """이메일 주소 유효성 검사"""
         pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -34,7 +101,8 @@ class EmailEntry(ttk.Entry):
     def clear(self):
         """입력 필드 초기화"""
         self._emails.clear()
-        self.delete(0, tk.END)
+        self.entry.delete(0, tk.END)
+        self.listbox.delete(0, tk.END)
 
 class FileList(ttk.Frame):
     """첨부 파일 목록을 표시하는 커스텀 위젯"""
